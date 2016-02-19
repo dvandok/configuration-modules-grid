@@ -124,7 +124,11 @@ sub Configure {
     ## initPaths
     ##
     my $pbsroot    = exists($cfgtree->{pbsroot}) ? $cfgtree->{pbsroot} : DEFAULTPBSDIR;
-    my $pbsmomconf = exists($cfgtree->{configPath}) ? $pbsroot . '/' . $cfgtree->{configPath} : $pbsroot . '/' . DEFAULTPBSMOMCONF;
+    my $confdir = $pbsroot;
+    if ($cfgtree->{confdir}) {
+      $confdir = $cfgtree->{confdir};
+    }
+    my $pbsmomconf = exists($cfgtree->{configPath}) ? $confdir . '/' . $cfgtree->{configPath} : $confdir . '/' . DEFAULTPBSMOMCONF;
     my $pbsinitscript = exists($cfgtree->{initScriptPath}) ? $cfgtree->{initScriptPath} : DEFAULTPBSINITSCRIPT;
 
     my $pbsdir=$pbsroot;
@@ -138,7 +142,7 @@ sub Configure {
     # the masterlist will fill the $clienthost directive
     # create the line(s) with the $clienthost directives from the master list
     my $pbsclienthostname='clienthost';
-    if ( $cfgtree->{behaviour} eq "Torque3" ) {
+    if ( defined $cfgtree->{behaviour} && $cfgtree->{behaviour} eq "Torque3" ) {
          $pbsclienthostname='pbsserver';
     }
     if ($cfgtree->{masters} && @{$cfgtree->{masters}}[0]){
@@ -249,7 +253,7 @@ sub Configure {
 
     ## behaviour OpenPBS default pushed to schema
     ## This Torque behaviour is from very early Torque version. OpenPBS is best left as default.
-    if ( $cfgtree->{behaviour} eq "Torque" ) {
+    if ( defined $cfgtree->{behaviour} && $cfgtree->{behaviour} eq "Torque" ) {
         # add a $pbsservername line
         # assume first master is the real one
         $contents .= '$pbsmastername ' . @{$cfgtree->{masters}}[0] . "\n";
@@ -281,7 +285,7 @@ sub Configure {
     # Update server_name file
     #
 
-    my $srvfile="$pbsdir/server_name";
+    my $srvfile="$confdir/server_name";
 
     ## Is this still needed? LC::Check::file probably already does this?
     -e "$srvfile" or ( open SNM,">$srvfile" and close SNM );
@@ -296,6 +300,8 @@ sub Configure {
                                mode  => 0644,
                              );
     if ( $result ) {
+	# the server_name file was updated, restart trqauthd
+	$self->restart_trqauthd();
         $self->log("$srvfile updated");
         $changes += $result;
     }
@@ -433,6 +439,14 @@ sub cpuinfo_hash {
     }
 
     return %localres
+}
+
+sub restart_trqauthd {
+    my ($self) = @_;
+    $self->log("server_name updated; restarting trqauthd...");
+    if (system("/sbin/service trqauthd restart")) {
+	$self->error('trqauthd init.d restart failed: ' . $?);
+    }
 }
 
 1; #required for Perl modules

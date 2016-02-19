@@ -178,6 +178,7 @@ type pbs_queue_attlist = {
     'resources_default.pvmem' ? string
     'resources_default.vmem' ? string
     'resources_default.walltime' ? string
+    'resources_default.cput' ? string
     'resources_max.cput'     ? string
     'resources_max.file'     ? string
     'resources_max.mem'      ? string
@@ -234,6 +235,8 @@ type ${project.artifactId}_component = {
     include structure_component
     'pbsroot'      ? string
     'binpath'      ? string
+    'confdir'      ? string
+    'logdir'       ? string
     'submitfilter' ? string
     'env'          ? string{}
     'server'       ? pbs_server

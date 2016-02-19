@@ -125,6 +125,8 @@ type ${project.artifactId}_component_type = {
     include structure_component
 
     "pbsroot"    ? string
+    "confdir"    ? string
+    "logdir"     ? string
     "configPath" ? string
     "initScriptPath" ? string
 
